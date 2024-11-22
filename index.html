@@ -96,22 +96,22 @@
                 $select_jurisdiction.select2({
                     theme: 'bootstrap-5',
                     data: select2options_jurisdiction,
-matcher: function (params, data) {
-    const statename = $select_jurisdiction_statefilter.val();
-    if (! statename) return data;
-    if (data.state_name == statename) return data;
-    return null;
-},
+                    matcher: function (params, data) {
+                        const statename = $select_jurisdiction_statefilter.val();
+                        if (! statename) return data;
+                        if (data.state_name == statename) return data;
+                        return null;
+                    },
                 });
                 $select_county.select2({
                     theme: 'bootstrap-5',
                     data: select2options_county,
-matcher: function (params, data) {
-    const statename = $select_county_statefilter.val();
-    if (! statename) return data;
-    if (data.state_name == statename) return data;
-    return null;
-},
+                    matcher: function (params, data) {
+                        const statename = $select_county_statefilter.val();
+                        if (! statename) return data;
+                        if (data.state_name == statename) return data;
+                        return null;
+                    },
                 });
                 $select_cbsa.select2({
                     theme: 'bootstrap-5',
@@ -140,12 +140,13 @@ matcher: function (params, data) {
                 });
 
                 // on selecting a state, clear the jurisdiction and county selections because they may be obsolete
-$select_jurisdiction_statefilter.change(() => {
-    $select_jurisdiction.val('').change();
-});
-$select_county_statefilter.change(() => {
-    $select_county.val('').change();
-});
+                // the filterring is not done here, but by the "matcher" callback which transforms data on its way into Select2 UI
+                $select_jurisdiction_statefilter.change(() => {
+                    $select_jurisdiction.val('').change();
+                });
+                $select_county_statefilter.change(() => {
+                    $select_county.val('').change();
+                });
 
                 // on selecting a report, clear the other pickers, then load this one
                 $select_jurisdiction.change(() => {
@@ -169,6 +170,37 @@ $select_county_statefilter.change(() => {
                     const url = $select_cbsa.val();
                     loadSnapshotReport(url);
                 });
+
+                // lastly, check URL params and see if we're supposed to load a report on startup
+                // ?jurisdiction=1234    ?county=1234    ?cbsa=1234
+                // the "id" values are in fact the URL, the ID is a prominent and predictable part of that URL
+                setTimeout(() => {
+                    const urlparams = new URLSearchParams(document.location.search.slice(1));
+                    const autoload_jurisdiction_id = urlparams.get('jurisdiction');
+                    const autoload_county_id = urlparams.get('county');
+                    const autoload_cbsa_id = urlparams.get('cbsa');
+
+                    if (autoload_jurisdiction_id) {
+                        const $option = $select_jurisdiction.find(`option[value$="/${autoload_jurisdiction_id}/"]`);
+                        console.debug( $option.length );
+                        if ($option.length) {
+                            const value = $option.first().prop('value');
+                            $select_jurisdiction.val(value).change();
+                        }
+                    } else if (autoload_county_id) {
+                        const $option = $select_county.find(`option[value$="/${autoload_county_id}/"]`);
+                        if ($option.length) {
+                            const value = $option.first().prop('value');
+                            $select_county.val(value).change();
+                        }
+                    } else if (autoload_cbsa_id) {
+                        const $option = $select_cbsa.find(`option[value$="/${autoload_cbsa_id}/"]`);
+                        if ($option.length) {
+                            const value = $option.first().prop('value');
+                            $select_cbsa.val(value).change();
+                        }
+                    }
+                }, 1 * 1000);
             })
             .catch((error) => {
                 alert(error);
