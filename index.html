@@ -97,20 +97,24 @@
                     theme: 'bootstrap-5',
                     data: select2options_jurisdiction,
                     matcher: function (params, data) {
+                        // custom filter function: not just the typeahead text, but also the selected state (if any)
+                        const term = params.term ? params.term.trim().toLowerCase() : undefined;
                         const statename = $select_jurisdiction_statefilter.val();
-                        if (! statename) return data;
-                        if (data.state_name == statename) return data;
-                        return null;
+                        if (term && data.text.toLowerCase().indexOf(term) == -1) return null;
+                        if (statename && data.state_name != statename) return null;
+                        return data;
                     },
                 });
                 $select_county.select2({
                     theme: 'bootstrap-5',
                     data: select2options_county,
                     matcher: function (params, data) {
+                        // custom filter function: not just the typeahead text, but also the selected county (if any)
+                        const term = params.term ? params.term.trim().toLowerCase() : undefined;
                         const statename = $select_county_statefilter.val();
-                        if (! statename) return data;
-                        if (data.state_name == statename) return data;
-                        return null;
+                        if (term && data.text.toLowerCase().indexOf(term) == -1) return null;
+                        if (statename && data.state_name != statename) return null;
+                        return data;
                     },
                 });
                 $select_cbsa.select2({
