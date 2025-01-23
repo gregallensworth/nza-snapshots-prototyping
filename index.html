@@ -159,6 +159,7 @@
 
                     const url = $select_jurisdiction.val();
                     loadSnapshotReport(url);
+                    updateAddressBarFromReportUrl(url);
                 });
                 $select_county.change(() => {
                     $select_jurisdiction.val('').trigger('change.select2');
@@ -166,6 +167,7 @@
 
                     const url = $select_county.val();
                     loadSnapshotReport(url);
+                    updateAddressBarFromReportUrl(url);
                 });
                 $select_cbsa.change(() => {
                     $select_jurisdiction.val('').trigger('change.select2');
@@ -173,6 +175,7 @@
 
                     const url = $select_cbsa.val();
                     loadSnapshotReport(url);
+                    updateAddressBarFromReportUrl(url);
                 });
 
                 // lastly, check URL params and see if we're supposed to load a report on startup
@@ -220,6 +223,21 @@
             } else {
                 $frame.css({ 'display': 'none' }).prop('src', '//:0');
             }
+        }
+
+        function updateAddressBarFromReportUrl (url) {
+            const areatypeandid = url.match(/\/(jurisdiction|county|cbsa)\/(\d+)\//);
+            let params = {};
+
+            if (areatypeandid) {
+                const areatype = areatypeandid[1];
+                const areaid = areatypeandid[2];
+                params[areatype] = areaid;
+            }
+
+            const base_url = document.location.href.indexOf('?') == -1 ? document.location.href : document.location.href.substr(0, document.location.href.indexOf('?'));
+            const bookmark = base_url + '?' + $.param(params);
+            window.history.replaceState({}, '', bookmark);
         }
         </script>
 
