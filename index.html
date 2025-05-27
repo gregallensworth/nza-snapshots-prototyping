@@ -24,7 +24,13 @@
 
         <div class="container">
             <div class="row">
-                <div class="col col-lg-4">
+                <div class="col col-lg-3">
+                    <h2>State</h2>
+                    <select id="select-state" class="form-select">
+                        <option value="">(select a state)</option>
+                    </select>
+                </div>
+                <div class="col col-lg-3">
                     <h2>Jurisdiction</h2>
                     <select id="select-jurisdiction-state" class="form-select">
                         <option value="">(filter by state, optional)</option>
@@ -33,7 +39,7 @@
                         <option value="">(select a jurisdiction)</option>
                     </select>
                 </div>
-                <div class="col col-lg-4">
+                <div class="col col-lg-3">
                     <h2>County</h2>
                     <select id="select-county-state" class="form-select">
                         <option value="">(filter by state, optional)</option>
@@ -42,7 +48,7 @@
                         <option value="">(select a county)</option>
                     </select>
                 </div>
-                <div class="col col-lg-4">
+                <div class="col col-lg-3">
                     <h2>Core-based Statistical Area</h2>
                     <select id="select-cbsa" class="form-select">
                         <option value="">(select a metro/micropolitan area)</option>                  
@@ -67,10 +73,12 @@
         // fetch the report listings, load them into the Select2 pickers
         // on selecting a report URL, show the iframe and load it
         document.addEventListener('DOMContentLoaded', () => {
+            const REPORT_LISTING_STATE = 'https://edit.zoningatlas.org/statsrollup/state/?format=json';
             const REPORT_LISTING_JURISDICTION = 'https://edit.zoningatlas.org/statsrollup/jurisdiction/?format=json';
             const REPORT_LISTING_COUNTY = 'https://edit.zoningatlas.org/statsrollup/county/?format=json';
             const REPORT_LISTING_CBSA = 'https://edit.zoningatlas.org/statsrollup/cbsa/?format=json';
 
+            const $select_state = $('#select-state');
             const $select_jurisdiction = $('#select-jurisdiction');
             const $select_county = $('#select-county');
             const $select_cbsa = $('#select-cbsa');
@@ -79,6 +87,7 @@
             const $select_county_statefilter = $('#select-county-state');
 
             const promises = [
+                fetch(REPORT_LISTING_STATE).then(r => r.json()),
                 fetch(REPORT_LISTING_JURISDICTION).then(r => r.json()),
                 fetch(REPORT_LISTING_COUNTY).then(r => r.json()),
                 fetch(REPORT_LISTING_CBSA).then(r => r.json()),
@@ -89,10 +98,15 @@
                 // take the 3 lists of options, transform them to Select2 options list, load them into Select2
                 [optionlist_jurisdiction, optionlist_county, optionlist_cbsa] = optionlists;
 
+                const select2options_state = optionlist_jurisdiction.areas.map((opt) => { return { id: opt.url, text: opt.name } });
                 const select2options_jurisdiction = optionlist_jurisdiction.areas.map((opt) => { return { id: opt.url, text: opt.name, state_name: opt.state_name } });
                 const select2options_county = optionlist_county.areas.map((opt) => { return { id: opt.url, text: opt.name, state_name: opt.state_name } });
                 const select2options_cbsa = optionlist_cbsa.areas.map((opt) => { return { id: opt.url, text: opt.name } });
 
+                $select_state.select2({
+                    theme: 'bootstrap-5',
+                    data: select2options_state,
+                });
                 $select_jurisdiction.select2({
                     theme: 'bootstrap-5',
                     data: select2options_jurisdiction,
@@ -153,7 +167,17 @@
                 });
 
                 // on selecting a report, clear the other pickers, then load this one
+                $select_state.change(() => {
+                    $select_jurisdiction.val('').trigger('change.select2');
+                    $select_county.val('').trigger('change.select2');
+                    $select_cbsa.val('').trigger('change.select2');
+
+                    const url = $select_state.val();
+                    loadSnapshotReport(url);
+                    updateAddressBarFromReportUrl(url);
+                });
                 $select_jurisdiction.change(() => {
+                    $select_state.val('').trigger('change.select2');
                     $select_county.val('').trigger('change.select2');
                     $select_cbsa.val('').trigger('change.select2');
 
@@ -162,6 +186,7 @@
                     updateAddressBarFromReportUrl(url);
                 });
                 $select_county.change(() => {
+                    $select_state.val('').trigger('change.select2');
                     $select_jurisdiction.val('').trigger('change.select2');
                     $select_cbsa.val('').trigger('change.select2');
 
@@ -170,6 +195,7 @@
                     updateAddressBarFromReportUrl(url);
                 });
                 $select_cbsa.change(() => {
+                    $select_state.val('').trigger('change.select2');
                     $select_jurisdiction.val('').trigger('change.select2');
                     $select_county.val('').trigger('change.select2');
 
@@ -183,13 +209,19 @@
                 // the "id" values are in fact the URL, the ID is a prominent and predictable part of that URL
                 setTimeout(() => {
                     const urlparams = new URLSearchParams(document.location.search.slice(1));
+                    const autoload_state_id = urlparams.get('state');
                     const autoload_jurisdiction_id = urlparams.get('jurisdiction');
                     const autoload_county_id = urlparams.get('county');
                     const autoload_cbsa_id = urlparams.get('cbsa');
 
-                    if (autoload_jurisdiction_id) {
+                    if (autoload_state_id) {
+                        const $option = $select_state.find(`option[value$="/${autoload_state_id}/"]`);
+                        if ($option.length) {
+                            const value = $option.first().prop('value');
+                            $select_state.val(value).change();
+                        }
+                    } else if (autoload_jurisdiction_id) {
                         const $option = $select_jurisdiction.find(`option[value$="/${autoload_jurisdiction_id}/"]`);
-                        console.debug( $option.length );
                         if ($option.length) {
                             const value = $option.first().prop('value');
                             $select_jurisdiction.val(value).change();
@@ -226,7 +258,7 @@
         }
 
         function updateAddressBarFromReportUrl (url) {
-            const areatypeandid = url.match(/\/(jurisdiction|county|cbsa)\/(\d+)\//);
+            const areatypeandid = url.match(/\/(state|jurisdiction|county|cbsa)\/(\d+)\//);
             let params = {};
 
             if (areatypeandid) {
