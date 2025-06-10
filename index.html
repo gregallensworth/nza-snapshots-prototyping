@@ -96,9 +96,9 @@
             Promise.all(promises)
             .then((optionlists) => {
                 // take the 3 lists of options, transform them to Select2 options list, load them into Select2
-                [optionlist_jurisdiction, optionlist_county, optionlist_cbsa] = optionlists;
+                [optionlist_state, optionlist_jurisdiction, optionlist_county, optionlist_cbsa] = optionlists;
 
-                const select2options_state = optionlist_jurisdiction.areas.map((opt) => { return { id: opt.url, text: opt.name } });
+                const select2options_state = optionlist_state.areas.map((opt) => { return { id: opt.url, text: opt.name } });
                 const select2options_jurisdiction = optionlist_jurisdiction.areas.map((opt) => { return { id: opt.url, text: opt.name, state_name: opt.state_name } });
                 const select2options_county = optionlist_county.areas.map((opt) => { return { id: opt.url, text: opt.name, state_name: opt.state_name } });
                 const select2options_cbsa = optionlist_cbsa.areas.map((opt) => { return { id: opt.url, text: opt.name } });
